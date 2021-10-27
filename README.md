@@ -30,8 +30,10 @@ public class Example{
 We can replace the filter with the following command:
 ```java
 java -jar replace.jar -replacewith=bar -fix
+```
 
 The output would be the source file with the replaced literal.
+
 ```
 public class Example{
     String bar(){
