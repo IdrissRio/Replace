@@ -34,11 +34,15 @@ import java.io.FileWriter;
 import java.io.PrintStream;
 import java.util.Scanner;
 public class FileManager {
+  String fileName;
   Scanner file;
   String code = "";
-  public FileManager(String filename) {
+  Boolean onFile = false;
+  public FileManager(String filename, Boolean onFile) {
     try {
+      this.fileName = filename;
       this.file = new Scanner(new File(filename));
+      this.onFile = onFile;
     } catch (Throwable t) {
       System.out.println("Error when opening the file: " + filename);
     }
@@ -46,6 +50,9 @@ public class FileManager {
   public void replace(Integer line_start, Integer line_end,
                       Integer column_start, Integer column_end,
                       String replacement) {
+    if (!onFile) {
+      replacement = "\033[1;33m" + replacement + "\u001b[0m";
+    }
     String newline = "\n";
     StringBuilder b = new StringBuilder(newline);
     for (int i = 0; i < line_end - line_start; i++) {
@@ -71,15 +78,20 @@ public class FileManager {
 
   public void close() { file.close(); }
 
-  public void printOnStream(PrintStream out) { out.print(code); }
-
-  public void printOnFile(String fileName) {
-    try {
-      FileWriter of = new FileWriter(fileName);
-      of.write(code);
-      of.close();
-    } catch (Exception e) {
-      System.err.println("Error. Cannot open/override file " + fileName);
+  public void print(Integer iter) {
+    if (onFile) {
+      try {
+        FileWriter of = new FileWriter(fileName);
+        of.write(code);
+        of.close();
+      } catch (Exception e) {
+        System.err.println("Error. Cannot open/override file " + fileName);
+      }
+    } else {
+      System.out.println(
+          "\n----------\u001b[33m[INFO]\u001b[0m: Preview replacement #" +
+          iter + "----------");
+      System.out.print(code);
     }
   }
 }

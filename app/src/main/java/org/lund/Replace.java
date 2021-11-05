@@ -99,7 +99,7 @@ public class Replace {
     table = new Table(System.in, Format.FANCY, readformat);
     for (int i = 1; i < table.getNumberRow(); ++i) {
       String filename = table.getElementRowColumn(i, "rel_path");
-      FileManager fm = new FileManager(filename);
+      FileManager fm = new FileManager(filename, fix);
       Integer line_start =
           Integer.parseInt(table.getElementRowColumn(i, "line_start"));
       Integer line_end =
@@ -109,10 +109,7 @@ public class Replace {
       Integer column_end =
           Integer.parseInt(table.getElementRowColumn(i, "column_end"));
       fm.replace(line_start, line_end, column_start, column_end, replacement);
-      if (fix)
-        fm.printOnFile(filename);
-      else
-        fm.printOnStream(System.out);
+      fm.print(i);
       fm.close();
     }
   }
