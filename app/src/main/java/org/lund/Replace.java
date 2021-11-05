@@ -29,22 +29,25 @@
  */
 
 package org.lund;
+import CLI.src.Format;
+import CLI.src.Table;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Scanner;
-
 /**
  * Perform static semantic checks on a Java program.
  */
 public class Replace {
 
   public static String[] tokens;
-  public static String specified_replacement;
+  public static String replacement;
   public static boolean printHelp = false;
   public static boolean fix = false;
   public static String collectcode = "";
+  public static Format readformat = Format.FANCY;
+  public static Table table;
 
   private void setEnv(String[] args) {
     for (int i = 0; i < args.length; ++i) {
@@ -53,11 +56,29 @@ public class Replace {
 
       } else if (opt.startsWith(
                      "-replacewith=")) { // Getting the value to replace
-        specified_replacement = opt.substring(13, opt.length());
+        replacement = opt.substring(13, opt.length());
         continue;
       } else if (opt.startsWith("-fix")) { // Getting the value to replace
         fix = true;
         continue;
+      } else if (opt.startsWith("-read=")) {
+        opt = opt.substring(6, opt.length());
+        switch (opt) {
+        case "csv":
+          readformat = Format.CSV;
+          continue;
+        case "tab":
+          readformat = Format.TAB;
+          continue;
+        case "fancy":
+          readformat = Format.FANCY;
+          continue;
+
+        default:
+          System.err.println("error");
+          System.exit(1);
+          break;
+        }
       } else {
         System.err.println("Unrecognized parameter:" + opt);
         printOptionsUsage();
@@ -75,82 +96,24 @@ public class Replace {
 
     // Reading the table values from the command line.
 
-    Scanner stdin = new Scanner(System.in);
-
-    try {
-      while (stdin.hasNextLine()) {
-        stdin.nextLine();
-        stdin.nextLine();
-        stdin.nextLine();
-        String line = stdin.nextLine();
-        tokens = line.split("\\|");
-        for (int i = 0; i < tokens.length; i++) {
-          tokens[i] = tokens[i].trim();
-        }
-      }
-    } catch (Exception e) {
-      System.err.println("");
-    }
-
-    // Reading the file at the specified location
-
-    String fileName = tokens[5];
-
-    if (fix) {
-      // Write code here to fix the existing file
-      try {
-        Scanner scanner = new Scanner(new File(fileName));
-        int line_start = Integer.parseInt(tokens[1]);
-        int line_end = Integer.parseInt(
-            tokens[2]); // TODO: handle chagnes on more than one line
-        int column_start = Integer.parseInt(tokens[3]);
-        int column_end = Integer.parseInt(tokens[4]);
-
-        while (scanner.hasNextLine()) {
-          for (int i = 0; i < line_start - 1; i++) {
-            collectcode += scanner.nextLine() + "\n";
-          }
-          String target_line = scanner.nextLine();
-          collectcode += target_line.substring(0, column_start - 1) +
-                         specified_replacement +
-                         target_line.substring(column_end - 1) + "\n";
-          while (scanner.hasNextLine()) {
-            collectcode += scanner.nextLine() + "\n";
-          }
-        }
-      } catch (Exception e) {
-        System.err.println("");
-      }
-      try {
-        FileWriter newfile = new FileWriter(fileName);
-        newfile.write(collectcode);
-        newfile.close();
-      } catch (Exception e) {
-        System.err.println("");
-      }
-
-    } else {
-      try {
-        Scanner scanner = new Scanner(new File(fileName));
-        int line_start = Integer.parseInt(tokens[1]);
-        int line_end = Integer.parseInt(tokens[2]);
-        int column_start = Integer.parseInt(tokens[3]);
-        int column_end = Integer.parseInt(tokens[4]);
-        while (scanner.hasNextLine()) {
-          for (int i = 0; i < line_start - 1; i++) {
-            System.out.println(scanner.nextLine());
-          }
-          String target_line = scanner.nextLine();
-          System.out.println(target_line.substring(0, column_start - 1) +
-                             specified_replacement +
-                             target_line.substring(column_end - 1));
-          while (scanner.hasNextLine()) {
-            System.out.println(scanner.nextLine());
-          }
-        }
-      } catch (Exception e) {
-        System.err.println("");
-      }
+    table = new Table(System.in, Format.FANCY, readformat);
+    for (int i = 1; i < table.getNumberRow(); ++i) {
+      String filename = table.getElementRowColumn(i, "rel_path");
+      FileManager fm = new FileManager(filename);
+      Integer line_start =
+          Integer.parseInt(table.getElementRowColumn(i, "line_start"));
+      Integer line_end =
+          Integer.parseInt(table.getElementRowColumn(i, "line_end"));
+      Integer column_start =
+          Integer.parseInt(table.getElementRowColumn(i, "column_start"));
+      Integer column_end =
+          Integer.parseInt(table.getElementRowColumn(i, "column_end"));
+      fm.replace(line_start, line_end, column_start, column_end, replacement);
+      if (fix)
+        fm.printOnFile(filename);
+      else
+        fm.printOnStream(System.out);
+      fm.close();
     }
   }
 
