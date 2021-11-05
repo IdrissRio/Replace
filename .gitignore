@@ -31,3 +31,5 @@ build
 .project
 
 .settings
+
+app/replace.jar
