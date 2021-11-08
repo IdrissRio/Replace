@@ -65,7 +65,6 @@ public class FileManager {
     code += target_line.substring(0, column_start - 1) + replacement;
     for (int i = line_start - 1; i < line_end - 1; ++i) {
       file.nextLine(); // ignoring the other lines
-      System.out.println("here");
     }
     if (line_start != line_end)
       target_line = file.nextLine();
